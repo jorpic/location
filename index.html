@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>− Определение местоположения</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100vh;
+      }
+      .container div {
+        display: flex;
+        justify-content: center;
+      }
+      .header, .footer {
+        height: 2em;
+        padding: 0.5em;
+        border: 1px solid black;
+      }
+      .footer {
+        cursor: pointer;
+      }
+      #info {
+        display: block;
+      }
+      #map {
+        flex-direction: column;
+        border: 1px solid red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <span id="info" />
+      </div>
+      <div id="map"></div>
+      <div class="footer">
+        Отправить
+      </div>
+    </div>
+    <script>
+      const info = document.getElementById("info");
+      const map = document.getElementById("map");
+
+      function success(pos) {
+        const res = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          locationAge:  new Date() - pos.timestamp,
+          currentTime: Date.now(),
+        }
+        info.textContent =
+          `Ваши координаты: (${res.lat}, ${res.lon}) с точностью ±z метров.`;
+        addTiles(res);
+      }
+
+      function error(err) {
+        info.textContent = JSON.stringify(err);
+      }
+
+      function addTiles({lon, lat}) {
+        const zoom = 16;
+        const n = Math.pow(2, zoom-1);
+        const rad = Math.PI / 180;
+        let x = (lon+180)/180 * n;
+        let y = (1 - Math.log(Math.tan(lat*rad) + 1/Math.cos(lat*rad))/Math.PI) * n;
+
+        x = Math.floor(x);
+        y = Math.floor(y);
+
+        for(let j of [-1, 0, 1]) {
+          const row = document.createElement("div");
+          for(let i of [-1, 0, 1]) {
+            const img = document.createElement("img")
+            img.src = `https://c.tile.openstreetmap.org/16/${x+i}/${y+j}.png`;
+            row.appendChild(img);
+          }
+          map.appendChild(row);
+        }
+      }
+
+      // navigator.geolocation.getCurrentPosition(success, error);
+      success({coords: {latitude: 55.2882, longitude: -114.7783}});
+    </script>
+  </body>
+  <!--
+    - full width on mobile
+    - top = logo, bottom = send button
+    - center = map
+  -->
+</html>
