@@ -64,7 +64,8 @@
       }
 
       function error(err) {
-        info.textContent = JSON.stringify(err);
+        console.log(err);
+        info.textContent = "Не удалось определить координаты: " + err.message;
       }
 
       function addTiles({lon, lat}) {
@@ -88,8 +89,8 @@
         }
       }
 
-      // navigator.geolocation.getCurrentPosition(success, error);
-      success({coords: {latitude: 55.2882, longitude: -114.7783}});
+      navigator.geolocation.getCurrentPosition(success, error);
+      // success({coords: {latitude: 55.2882, longitude: -114.7783}});
     </script>
   </body>
   <!--
