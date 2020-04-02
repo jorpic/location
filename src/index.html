@@ -102,6 +102,46 @@
         }
       }
 
+      const w = map.clientWidth;
+      const h = map.clientHeight;
+
+      let startX, startY;
+      let dx = 0, dy = 0;
+      let isMoving = false;
+      function start(e) {
+        let touch = e;
+        if (e.type === "touchstart") {
+          touch = e.targetTouches[0] || e.changedTouches[0];
+        }
+        startX = touch.pageX;
+        startY = touch.pageY;
+        isMoving = true;
+      }
+
+      function move(e) {
+        if(isMoving) {
+          let touch = e;
+          if (e.type === "touchmove") {
+            touch = e.targetTouches[0] || e.changedTouches[0];
+          }
+          dx += startX - touch.pageX;
+          dy += startY - touch.pageY;
+          startX = touch.pageX;
+          startY = touch.pageY;
+          map.setAttribute("viewBox", `${dx} ${dy} ${w} ${h}`);
+        }
+      }
+      function end() {
+        isMoving = false;
+      }
+
+      map.addEventListener("mousedown", start, false);
+      map.addEventListener("touchstart", start, false);
+      map.addEventListener("mousemove", move, false);
+      map.addEventListener("touchmove", move, false);
+      document.body.addEventListener("mouseup", end, false);
+      document.body.addEventListener("touchend", end, false);
+
       // navigator.geolocation.getCurrentPosition(success, error);
       success({coords: {latitude: 55.2882, longitude: -114.7783}});
     </script>
