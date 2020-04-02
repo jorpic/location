@@ -120,6 +120,7 @@
 
       function move(e) {
         if(isMoving) {
+          e.preventDefault();
           let touch = e;
           if (e.type === "touchmove") {
             touch = e.targetTouches[0] || e.changedTouches[0];
