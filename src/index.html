@@ -85,24 +85,25 @@
         x = Math.floor(x);
         y = Math.floor(y);
 
-        for(let j of [-1, 0, 1]) {
-          const row = document.createElement("div");
-          for(let i of [-1, 0, 1]) {
-            const img = document.createElement("img")
-            img.src = `https://c.tile.openstreetmap.org/16/${x+i}/${y+j}.png`;
-            row.appendChild(img);
+        const ts = 256; // tile size
+        const cx = Math.floor((map.clientWidth - ts) / 2);
+        const cy = Math.floor((map.clientHeight - ts) / 2);
+        for(let i of [-1, 0, 1]) {
+          for(let j of [-1, 0, 1]) {
+            const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+            // `xlink:href` is deprecated but we use it anyway as SVG2-style
+            // `href` is not supported by iOS 11 and Safari 11.
+            img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href",
+              `https://c.tile.openstreetmap.org/16/${x+i}/${y+j}.png`);
+            img.setAttribute("x", cx + ts*i);
+            img.setAttribute("y", cy + ts*j);
+            map.appendChild(img);
           }
-          map.appendChild(row);
         }
       }
 
-      navigator.geolocation.getCurrentPosition(success, error);
-      // success({coords: {latitude: 55.2882, longitude: -114.7783}});
+      // navigator.geolocation.getCurrentPosition(success, error);
+      success({coords: {latitude: 55.2882, longitude: -114.7783}});
     </script>
   </body>
-  <!--
-    - full width on mobile
-    - top = logo, bottom = send button
-    - center = map
-  -->
 </html>
