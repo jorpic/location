@@ -52,11 +52,19 @@
         <button>Отправить координаты</button>
       </header>
       <content>
-        <svg id="map" width="100%" height="100%"></svg>
+        <svg id="svg" width="100%" height="100%">
+          <g id="map"></g>
+          <g id="pin">
+            <g transform="translate(-12 -36) scale(0.5)" fill="#880096">
+              <path d="M24,0 C11,0 0,10 0,22 C0,35 10,50 24,72 C37,50 48,35 48,22 C48,10 36,0 24,0 L24,0 Z M24,33 C19,33 15,28 15,24 C15,19 19,15 24,15 C28,15 33,19 33,24 C33,28 28,33 24,33 L24,33 Z"></path>
+            </g>
+          </g>
+        </svg>
       </content>
     <script>
-      const info = document.getElementById("info");
+      const svg = document.getElementById("svg");
       const map = document.getElementById("map");
+      const pin = document.getElementById("pin");
 
       function success(pos) {
         const res = {
@@ -85,28 +93,30 @@
         x = Math.floor(x);
         y = Math.floor(y);
 
-        const ts = 256; // tile size
-        const cx = Math.floor((map.clientWidth - ts) / 2);
-        const cy = Math.floor((map.clientHeight - ts) / 2);
+        const ts = 255; // tile size
         for(let i of [-1, 0, 1]) {
           for(let j of [-1, 0, 1]) {
             const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
             // `xlink:href` is deprecated but we use it anyway as SVG2-style
             // `href` is not supported by iOS 11 and Safari 11.
             img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href",
-              `https://c.tile.openstreetmap.org/16/${x+i}/${y+j}.png`);
-            img.setAttribute("x", cx + ts*i);
-            img.setAttribute("y", cy + ts*j);
+              `https://${"abc"[(ts+i+j)%3]}.tile.openstreetmap.org/${zoom}/${x+i}/${y+j}.png`);
+            img.setAttribute("x", ts*i - ts/2);
+            img.setAttribute("y", ts*j - ts/2);
             map.appendChild(img);
           }
         }
       }
 
-      const w = map.clientWidth;
-      const h = map.clientHeight;
+
+      const cx = Math.floor((svg.clientWidth) / 2);
+      const cy = Math.floor((svg.clientHeight) / 2);
+      pin.setAttribute("transform", `translate(${cx} ${cy})`);
 
       let startX, startY;
-      let dx = 0, dy = 0;
+      let dx = cx, dy = cy;
+      map.setAttribute("transform", `translate(${dx} ${dy})`);
+
       let isMoving = false;
       function start(e) {
         let touch = e;
@@ -125,11 +135,11 @@
           if (e.type === "touchmove") {
             touch = e.targetTouches[0] || e.changedTouches[0];
           }
-          dx += startX - touch.pageX;
-          dy += startY - touch.pageY;
+          dx += touch.pageX - startX;
+          dy += touch.pageY - startY;
           startX = touch.pageX;
           startY = touch.pageY;
-          map.setAttribute("viewBox", `${dx} ${dy} ${w} ${h}`);
+          map.setAttribute("transform", `translate(${dx} ${dy})`);
         }
       }
       function end() {
