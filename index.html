@@ -119,9 +119,12 @@
 
       let isMoving = false;
       function start(e) {
+        console.log({f: "start", isMoving});
+        e.preventDefault();
         let touch = e;
         if (e.type === "touchstart") {
           touch = e.targetTouches[0] || e.changedTouches[0];
+          console.log({f: "start", touch});
         }
         startX = touch.pageX;
         startY = touch.pageY;
@@ -129,11 +132,13 @@
       }
 
       function move(e) {
+        console.log({f: "move", isMoving});
         if(isMoving) {
           e.preventDefault();
           let touch = e;
           if (e.type === "touchmove") {
             touch = e.targetTouches[0] || e.changedTouches[0];
+            console.log({f: "move", touch});
           }
           dx += touch.pageX - startX;
           dy += touch.pageY - startY;
@@ -144,12 +149,13 @@
       }
       function end() {
         isMoving = false;
+        console.log({f: "end", isMoving});
       }
 
-      map.addEventListener("mousedown", start, false);
-      map.addEventListener("touchstart", start, false);
-      map.addEventListener("mousemove", move, false);
-      map.addEventListener("touchmove", move, false);
+      svg.addEventListener("mousedown", start, false);
+      svg.addEventListener("touchstart", start, false);
+      svg.addEventListener("mousemove", move, false);
+      svg.addEventListener("touchmove", move, false);
       document.body.addEventListener("mouseup", end, false);
       document.body.addEventListener("touchend", end, false);
 
