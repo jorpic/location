@@ -62,9 +62,115 @@
         </svg>
       </content>
     <script>
-      const svg = document.getElementById("svg");
-      const map = document.getElementById("map");
-      const pin = document.getElementById("pin");
+      const $ = id => document.getElementById(id);
+      const info = $("info");
+      const svg = $("svg");
+
+
+      const zoom = 16;
+      const zPow = Math.pow(2, zoom-1);
+      const tileSize = 255;
+      const pi = Math.PI;
+
+      function deg2tile({lon, lat}) {
+        const lrad = lat * Math.PI / 180;
+        let x = (lon + 180) / 180 * zPow;
+        let y = (1 - Math.log(Math.tan(lrad) + 1/Math.cos(lrad))/pi) * zPow;
+        return {x, y};
+      }
+
+      function tile2deg({x, y}) {
+        const lon = 180 * (x / zPow - 1);
+        const lat = Math.atan(Math.sinh(pi*(1 - y/zPow))) * 180 / pi;
+        return {lon, lat};
+      }
+
+      const map = {
+        el: $("map"),
+        pin: $("pin"),
+        dx: 0,
+        dy: 0,
+      };
+
+      // center of the viewBox
+      const cx = Math.floor((svg.clientWidth) / 2);
+      const cy = Math.floor((svg.clientHeight) / 2);
+
+      function initMap(pos) {
+        const {x, y} = deg2tile(pos);
+        const tx = Math.floor(x);
+        const ty = Math.floor(y);
+
+        // Add tiles.
+        for(let i of [-1, 0]) {
+          for(let j of [-1, 0]) {
+            const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+            const srv = "abc"[Math.floor(Math.random()*12)%3];
+            // `xlink:href` is deprecated but we use it anyway as SVG2-style
+            // `href` is not supported by iOS 11 and Safari 11.
+            img.setAttributeNS(
+              "http://www.w3.org/1999/xlink",
+              "xlink:href",
+              `https://${srv}.tile.openstreetmap.org/${zoom}/${tx+i}/${ty+j}.png`);
+
+            img.setAttribute("x", tileSize*i);
+            img.setAttribute("y", tileSize*j);
+            map.el.appendChild(img);
+          }
+        }
+
+        map.pin.setAttribute("transform", `translate(${cx} ${cy})`);
+        moveMap(tileSize * (x - tx), tileSize * (y - ty));
+      }
+
+
+      function moveMap(dx, dy) { // in pixels
+        map.dx += dx;
+        map.dy += dy;
+
+        map.el.setAttribute("transform", `translate(${cx - map.dx} ${cy - map.dy})`);
+        console.log(map);
+        // calculate tile (x,y)
+        // update info
+      }
+
+
+      function initTouch() {
+        const pos = e => e.touches ? e.touches[0] : e;
+        let isMoving = false;
+        let sx, sy;
+
+        function start(e) {
+          e.preventDefault();
+          isMoving = true;
+          const p = pos(e);
+          sx = p.pageX;
+          sy = p.pageY;
+        }
+
+        function move(e) {
+          if(isMoving) {
+            const p = pos(e);
+            moveMap(sx - p.pageX, sy - p.pageY);
+            sx = p.pageX;
+            sy = p.pageY;
+            // info.textContent = ` TODO`;
+          }
+        }
+
+        function end(e) {
+          isMoving = false;
+        }
+
+        const listen = (el, ev, fn) => el.addEventListener(ev, fn, false);
+        listen(svg, "mousedown", start);
+        listen(svg, "touchstart", start);
+        listen(svg, "mousemove", move);
+        listen(svg, "touchmove", move);
+        listen(document.body, "mouseup", end);
+        // touchend is not required
+      }
+
 
       function success(pos) {
         const res = {
@@ -75,7 +181,6 @@
           currentTime: Date.now(),
         }
         // `Ваши координаты: (${res.lat}, ${res.lon}) с точностью ±z метров.`;
-        addTiles(res);
       }
 
       function error(err) {
@@ -83,78 +188,10 @@
         info.textContent = "Не удалось определить координаты: " + err.message;
       }
 
-      function addTiles({lon, lat}) {
-        const zoom = 16;
-        const n = Math.pow(2, zoom-1);
-        const rad = Math.PI / 180;
-        let x = (lon+180)/180 * n;
-        let y = (1 - Math.log(Math.tan(lat*rad) + 1/Math.cos(lat*rad))/Math.PI) * n;
-
-        x = Math.floor(x);
-        y = Math.floor(y);
-
-        const ts = 255; // tile size
-        for(let i of [-1, 0, 1]) {
-          for(let j of [-1, 0, 1]) {
-            const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-            // `xlink:href` is deprecated but we use it anyway as SVG2-style
-            // `href` is not supported by iOS 11 and Safari 11.
-            img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href",
-              `https://${"abc"[(ts+i+j)%3]}.tile.openstreetmap.org/${zoom}/${x+i}/${y+j}.png`);
-            img.setAttribute("x", ts*i - ts/2);
-            img.setAttribute("y", ts*j - ts/2);
-            map.appendChild(img);
-          }
-        }
-      }
-
-
-      const cx = Math.floor((svg.clientWidth) / 2);
-      const cy = Math.floor((svg.clientHeight) / 2);
-      pin.setAttribute("transform", `translate(${cx} ${cy})`);
-
-      let startX, startY;
-      let dx = cx, dy = cy;
-      map.setAttribute("transform", `translate(${dx} ${dy})`);
-
-      let isMoving = false;
-      function start(e) {
-        let touch = e;
-        if (e.type === "touchstart") {
-          touch = e.targetTouches[0] || e.changedTouches[0];
-        }
-        startX = touch.pageX;
-        startY = touch.pageY;
-        isMoving = true;
-      }
-
-      function move(e) {
-        if(isMoving) {
-          e.preventDefault();
-          let touch = e;
-          if (e.type === "touchmove") {
-            touch = e.targetTouches[0] || e.changedTouches[0];
-          }
-          dx += touch.pageX - startX;
-          dy += touch.pageY - startY;
-          startX = touch.pageX;
-          startY = touch.pageY;
-          map.setAttribute("transform", `translate(${dx} ${dy})`);
-        }
-      }
-      function end() {
-        isMoving = false;
-      }
-
-      map.addEventListener("mousedown", start, false);
-      map.addEventListener("touchstart", start, false);
-      map.addEventListener("mousemove", move, false);
-      map.addEventListener("touchmove", move, false);
-      document.body.addEventListener("mouseup", end, false);
-      document.body.addEventListener("touchend", end, false);
+      initMap({lat: 55.583357, lon: 37.596508});
+      initTouch();
 
       // navigator.geolocation.getCurrentPosition(success, error);
-      success({coords: {latitude: 55.2882, longitude: -114.7783}});
     </script>
   </body>
 </html>
