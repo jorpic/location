@@ -3,7 +3,6 @@
   <head>
     <title>− Определение местоположения</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
       * {
         margin: 0;
@@ -13,7 +12,7 @@
         display: flex;
         flex-flow: column;
         height: 100vh;
-        max-width: 60rem;
+        max-width: 50rem;
         margin: auto;
       }
       header {
@@ -21,7 +20,6 @@
         flex-flow: row wrap;
         justify-content: space-between;
         align-items: center;
-        border: 1px solid green;
         padding: 0.5em;
       }
       @media (orientation: portrait) {
@@ -37,10 +35,12 @@
         }
       }
       content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
         flex-grow: 1;
+        border: 1px solid green;
+      }
+      svg {
+        width: 100%;
+        height: 100%;
         border: 1px solid red;
       }
     </style>
@@ -52,7 +52,7 @@
         <button>Отправить координаты</button>
       </header>
       <content>
-        <svg id="svg" width="100%" height="100%">
+        <svg id="svg" preserveAspectRatio="none">
           <g id="map"></g>
           <g id="pin">
             <g transform="translate(-12 -36) scale(0.5)" fill="#880096">
@@ -73,7 +73,7 @@
       const pi = Math.PI;
 
       function deg2tile({lon, lat}) {
-        const lrad = lat * Math.PI / 180;
+        const lrad = lat * pi / 180;
         let x = (lon + 180) / 180 * zPow;
         let y = (1 - Math.log(Math.tan(lrad) + 1/Math.cos(lrad))/pi) * zPow;
         return {x, y};
