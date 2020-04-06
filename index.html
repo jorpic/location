@@ -10,7 +10,15 @@
         padding: 0;
       }
       body {
+        display: -webkit-box;
+        display: -moz-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
         display: flex;
+        -webkit-box-direction: normal;
+        -webkit-box-orient: vertical;
+        -moz-box-direction: normal;
+        -moz-box-orient: vertical;
         flex-flow: column;
         height: 100vh;
         max-width: 50rem;
@@ -36,6 +44,10 @@
         }
       }
       content {
+        -webkit-box-flex: 1;
+        -moz-box-flex: 1;
+        -webkit-flex-grow: 1;
+        -ms-flex: 1;
         flex-grow: 1;
       }
       svg {
@@ -51,7 +63,7 @@
         <button>Отправить координаты</button>
       </header>
       <content>
-        <svg id="svg">
+        <svg id="svg" preserveAspectRatio="none">
           <g id="map"></g>
           <g id="pin">
             <g transform="translate(-12 -36) scale(0.5)" fill="#880096">
