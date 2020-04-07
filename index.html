@@ -56,7 +56,7 @@
       Лого и название программы
     </div>
     <div class="info welcome">
-      <p>Нажмите кнопку, чтобы определить ваше местоположение.</p>
+      <p>Нажмите кнопку, чтобы определить Ваше местоположение.</p>
       <button onclick="getCoords()">Начать</button>
     </div>
     <div class="info err">
@@ -64,14 +64,13 @@
       <button onclick="getCoords()">Попробовать ещё</button>
     </div>
     <div class="info ok">
-      <p>Ура! Мы определили ваше местоположение, откорректируйте его если надо и
-        не забудьте отправить.</p>
+      <p>Пожалуйста, уточните Ваше местоположение.</p>
       <br/><p id="info1"></p>
       <br/><p id="info2"></p>
-      <button onclick="sendCoords()">Отправить</button>
+      <button onclick="sendCoords()">Уточнить</button>
     </div>
     <div class="info done">
-      <p>Спасибо, мы уже спешим к вам.</p>
+      <p>Спасибо, мы уже спешим к Вам.</p>
     </div>
     <div id="content">
       <svg id="svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="10" height="10">
@@ -92,7 +91,6 @@
       // elements
       const info = $("info");
       const svg = $("svg");
-
 
       const zoom = 16;
       const zPow = Math.pow(2, zoom-1);
@@ -122,6 +120,8 @@
         pin: $("pin"),
         dx: 0,
         dy: 0,
+        originX: 0,
+        originY: 0,
       };
 
       function initMap(pos) {
@@ -158,18 +158,23 @@
       }
 
 
+      // We use this not only to move map but also to adjust it on resize or
+      // orientation change.
       function moveMap(dx, dy) { // in pixels
         map.dx += dx;
         map.dy += dy;
 
-        // center of the viewBox
         const c = $("content");
         const cx = Math.floor((c.clientWidth) / 2);
         const cy = Math.floor((c.clientHeight) / 2);
+
+        // Sadly we can not rely on `flex: 1` to stretch our map, as Safari
+        // requires SVG elements to have explicit `width` and `height`
+        // attributes.
         svg.setAttribute("width", c.clientWidth);
         svg.setAttribute("height", c.clientHeight);
-        map.pin.setAttribute("transform", `translate(${cx} ${cy})`);
 
+        map.pin.setAttribute("transform", `translate(${cx} ${cy})`);
         map.tiles.setAttribute("transform", `translate(${cx - map.dx} ${cy - map.dy})`);
 
         // Tile that is currently under the pin (with a shift within the tile
