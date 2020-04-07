@@ -117,6 +117,7 @@
 
       const map = {
         tiles: $("tiles"),
+        loadedTiles: {},
         pin: $("pin"),
         dx: 0,
         dy: 0,
@@ -133,25 +134,6 @@
         map.originX = tx;
         map.originY = ty;
 
-        // Add tiles.
-        for(let i of [-1, 0, 1]) {
-          for(let j of [-1, 0, 1]) {
-            const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-            const srv = "abc"[Math.floor(Math.random()*12)%3];
-            // NB. `xlink:href` is deprecated but we use it anyway as SVG2-style
-            // `href` is not supported by iOS 11 and Safari 11.
-            img.setAttributeNS(
-              "http://www.w3.org/1999/xlink",
-              "xlink:href",
-              `https://${srv}.tile.openstreetmap.org/${zoom}/${tx+i}/${ty+j}.png`);
-
-            img.setAttribute("width", tileSize);
-            img.setAttribute("height", tileSize);
-            img.setAttribute("x", tileSize*i);
-            img.setAttribute("y", tileSize*j);
-            map.tiles.appendChild(img);
-          }
-        }
 
         moveMap(tileSize * (x - tx), tileSize * (y - ty));
         listen(window, "orientationchange resize", () => moveMap(0, 0));
@@ -183,6 +165,31 @@
         const y = map.originY + map.dy / tileSize;
         let {lon, lat} = tile2deg({x, y});
         $("info2").textContent = `(${lat.toFixed(6)}, ${lon.toFixed(6)})`;
+
+        // Add tiles around current location.
+        for(let k = 0; k < 9; ++k) {
+          const i = k%3 - 1;
+          const j = Math.floor(k/3) - 1;
+          const key = [zoom, Math.floor(x)+i, Math.floor(y)+j].join("/");
+          if(!map.loadedTiles[key]) {
+            const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+            const srv = "abc"[Math.floor(Math.random()*12)%3];
+            // NB. `xlink:href` is deprecated but we use it anyway as SVG2-style
+            // `href` is not supported by iOS 11 and Safari 11.
+
+            img.setAttributeNS(
+              "http://www.w3.org/1999/xlink",
+              "xlink:href",
+              `https://${srv}.tile.openstreetmap.org/${key}.png`);
+
+            img.setAttribute("width", tileSize);
+            img.setAttribute("height", tileSize);
+            img.setAttribute("x", tileSize*(Math.floor(x) - map.originX + i));
+            img.setAttribute("y", tileSize*(Math.floor(y) - map.originY + j));
+            map.tiles.appendChild(img);
+            map.loadedTiles[key] = img;
+          }
+        }
       }
 
 
@@ -236,8 +243,8 @@
       }
 
       function error(err) {
-        // success({coords: {latitude: 55.583357, longitude: 37.596508, accuracy: 11}});
-        showInfo("err");
+        success({coords: {latitude: 55.583357, longitude: 37.596508, accuracy: 11}});
+        // showInfo("err");
       }
 
       function showInfo(cls) {
