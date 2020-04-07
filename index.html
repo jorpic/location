@@ -1,43 +1,80 @@
-<!DOCTYPE html>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <html>
   <head>
     <title>− Определение местоположения</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-      }
       body {
         display: flex;
         flex-direction: column;
         height: 100vh;
         max-width: 50rem;
         margin: auto;
+        font-family: sans-serif;
       }
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+      .bar {
+        background-color: dodgerblue;
+        color: white;
         padding: 0.5em;
       }
-      svg {
+      .info {
+        display: none; /* this will be set to 'block' in JS */
+        padding: 0.5em;
+        background-color: azure;
+      }
+      .err {
+        background-color: mistyrose;
+      }
+      .done {
+        background-color: mintcream;
+      }
+      .info p {
+        display: inline;
+      }
+      button {
+        float: right;
+        outline: none;
+        background: none;
+        border: 3px solid black;
+        border-radius: 0.7em;
+        padding: 0.5em;
+        margin: 0.75em;
+        min-width: 12em;
+      }
+      button:active {
+        transform: scale(0.95);
+      }
+      #content {
         display: flex;
         flex: 1;
-        border: 1px solid red;
       }
     </style>
   </head>
   <body>
-      <header>
-        <div>
-          <p id="info1"></p>
-          <p id="info2"></p>
-        </div>
-        <button>Отправить координаты</button>
-      </header>
-      <svg id="svg">
+    <div class="bar">
+      Лого и название программы
+    </div>
+    <div class="info welcome">
+      <p>Нажмите кнопку, чтобы определить ваше местоположение.</p>
+      <button onclick="getCoords()">Начать</button>
+    </div>
+    <div class="info err">
+      <p>Что-то пошло не так.</p>
+      <button onclick="getCoords()">Попробовать ещё</button>
+    </div>
+    <div class="info ok">
+      <p>Ура! Мы определили ваше местоположение, откорректируйте его если надо и
+        не забудьте отправить.</p>
+      <br/><p id="info1"></p>
+      <br/><p id="info2"></p>
+      <button onclick="sendCoords()">Отправить</button>
+    </div>
+    <div class="info done">
+      <p>Спасибо, мы уже спешим к вам.</p>
+    </div>
+    <div id="content">
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="10" height="10">
         <g id="tiles"></g>
         <g id="pin">
           <g transform="translate(-12 -36) scale(0.5)" fill="#880096">
@@ -45,6 +82,7 @@
           </g>
         </g>
       </svg>
+    </div>
     <script>
       // helpers
       const listen = (el, ev, fn) =>
@@ -96,8 +134,8 @@
         map.originY = ty;
 
         // Add tiles.
-        for(let i of [-1, 0]) {
-          for(let j of [-1, 0]) {
+        for(let i of [-1, 0, 1]) {
+          for(let j of [-1, 0, 1]) {
             const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
             const srv = "abc"[Math.floor(Math.random()*12)%3];
             // NB. `xlink:href` is deprecated but we use it anyway as SVG2-style
@@ -107,12 +145,13 @@
               "xlink:href",
               `https://${srv}.tile.openstreetmap.org/${zoom}/${tx+i}/${ty+j}.png`);
 
+            img.setAttribute("width", tileSize);
+            img.setAttribute("height", tileSize);
             img.setAttribute("x", tileSize*i);
             img.setAttribute("y", tileSize*j);
             map.tiles.appendChild(img);
           }
         }
-
 
         moveMap(tileSize * (x - tx), tileSize * (y - ty));
         listen(window, "orientationchange resize", () => moveMap(0, 0));
@@ -124,14 +163,17 @@
         map.dy += dy;
 
         // center of the viewBox
-        const cx = Math.floor((svg.clientWidth) / 2);
-        const cy = Math.floor((svg.clientHeight) / 2);
+        const c = $("content");
+        const cx = Math.floor((c.clientWidth) / 2);
+        const cy = Math.floor((c.clientHeight) / 2);
+        svg.setAttribute("width", c.clientWidth);
+        svg.setAttribute("height", c.clientHeight);
         map.pin.setAttribute("transform", `translate(${cx} ${cy})`);
 
         map.tiles.setAttribute("transform", `translate(${cx - map.dx} ${cy - map.dy})`);
 
         // Tile that is currently under the pin (with a shift within the tile
-        // as a noninteger part).
+        // as a fractional part).
         const x = map.originX + map.dx / tileSize;
         const y = map.originY + map.dy / tileSize;
         let {lon, lat} = tile2deg({x, y});
@@ -139,6 +181,7 @@
       }
 
 
+      let movingEnabled = true;
       function initTouch() {
         const pos = e => e.touches ? e.touches[0] : e;
         let isMoving = false;
@@ -153,7 +196,7 @@
         }
 
         function move(e) {
-          if(isMoving) {
+          if(movingEnabled && isMoving) {
             const p = pos(e);
             moveMap(sx - p.pageX, sy - p.pageY);
             sx = p.pageX;
@@ -167,8 +210,7 @@
 
         listen(svg, "mousedown touchstart", start);
         listen(svg, "mousemove touchmove", move);
-        listen(document.body, "mouseup", end);
-        // touchend is not required
+        listen(document.body, "mouseup", end); // touchend is not required
       }
 
 
@@ -180,19 +222,37 @@
           // locationAge: new Date() - pos.timestamp,
           // currentTime: Date.now(),
         };
-        $("info1").textContent = `(${res.lat}, ${res.lon}) с точностью ±${res.accuracy} метров.`;
+        $("info1").textContent = `(${res.lat.toFixed(6)}, ${res.lon.toFixed(6)})`
+          + ` с точностью ±${res.accuracy.toFixed(1)} метров.`;
+
+        showInfo("ok");
         initMap(res);
         initTouch();
       }
 
       function error(err) {
-        // console.log(err);
-        // info.textContent = "Не удалось определить координаты: " + err.message;
-        success({coords: {latitude: 55.583357, longitude: 37.596508, accuracy: 11}});
-        initTouch();
+        // success({coords: {latitude: 55.583357, longitude: 37.596508, accuracy: 11}});
+        showInfo("err");
       }
 
-      navigator.geolocation.getCurrentPosition(success, error);
+      function showInfo(cls) {
+        const info = document.getElementsByClassName("info");
+        for(let i = 0; i < info.length; ++i) {
+          info[i].style.display = info[i].classList.contains(cls) ? "block" : "none";
+        }
+      }
+
+      window.getCoords = function() {
+        navigator.geolocation.getCurrentPosition(success, error);
+      }
+
+      window.sendCoords = function() {
+        movingEnabled = false;
+        showInfo(Math.random() > 0.5 ? "done" : "err");
+        // NOT IMPLEMENTED YET
+      }
+
+      showInfo("welcome");
     </script>
   </body>
 </html>
