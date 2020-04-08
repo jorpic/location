@@ -1,7 +1,7 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <html>
   <head>
-    <title>− Определение местоположения</title>
+    <title>Определение местоположения</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
     <style>
@@ -14,14 +14,17 @@
         font-family: sans-serif;
       }
       .bar {
-        background-color: dodgerblue;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: grey;
         color: white;
         padding: 0.5em;
       }
       .info {
         display: none; /* this will be set to 'block' in JS */
         padding: 0.5em;
-        background-color: azure;
+        background-color: ivory;
       }
       .err {
         background-color: mistyrose;
@@ -53,7 +56,8 @@
   </head>
   <body>
     <div class="bar">
-      Лого и название программы
+      <img width="48" height="48" src="https://bmw.com/etc.clientlibs/settings/wcm/designs/bmwcom/base/resources/ci2020/img/logo-en.png"/>
+      BMW Roadside Assistance
     </div>
     <div class="info welcome">
       <p>Нажмите кнопку, чтобы определить Ваше местоположение.</p>
