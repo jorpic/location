@@ -69,8 +69,6 @@
     </div>
     <div class="info ok">
       <p>Пожалуйста, уточните Ваше местоположение.</p>
-      <br/><p id="info1"></p>
-      <br/><p id="info2"></p>
       <button onclick="sendCoords()">Уточнить</button>
     </div>
     <div class="info done">
@@ -105,6 +103,7 @@
       // Integral part of function result specifies the tile.
       // Fractional part specifies the shift from the left upper coner of the
       // tile.
+      // See https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
       function deg2tile({lon, lat}) {
         const lrad = lat * pi / 180;
         let x = (lon + 180) / 180 * zPow;
@@ -168,7 +167,7 @@
         const x = map.originX + map.dx / tileSize;
         const y = map.originY + map.dy / tileSize;
         let {lon, lat} = tile2deg({x, y});
-        $("info2").textContent = `(${lat.toFixed(6)}, ${lon.toFixed(6)})`;
+        // $("info2").textContent = `(${lat.toFixed(6)}, ${lon.toFixed(6)})`;
 
         // Add tiles around current location.
         for(let k = 0; k < 9; ++k) {
@@ -238,8 +237,6 @@
           // locationAge: new Date() - pos.timestamp,
           // currentTime: Date.now(),
         };
-        $("info1").textContent = `(${res.lat.toFixed(6)}, ${res.lon.toFixed(6)})`
-          + ` с точностью ±${res.accuracy.toFixed(1)} метров.`;
 
         showInfo("ok");
         initMap(res);
@@ -247,8 +244,7 @@
       }
 
       function error(err) {
-        success({coords: {latitude: 55.583357, longitude: 37.596508, accuracy: 11}});
-        // showInfo("err");
+        showInfo("err");
       }
 
       function showInfo(cls) {
@@ -256,6 +252,9 @@
         for(let i = 0; i < info.length; ++i) {
           info[i].style.display = info[i].classList.contains(cls) ? "block" : "none";
         }
+        // The size of the map can chenge as we are udpating our layout,
+        // so we need to schedule `moveMap` to fix the pin position.
+        setTimeout(() => moveMap(0,0), 20);
       }
 
       window.getCoords = function() {
@@ -264,8 +263,8 @@
 
       window.sendCoords = function() {
         movingEnabled = false;
-        showInfo(Math.random() > 0.5 ? "done" : "err");
         // NOT IMPLEMENTED YET
+        showInfo(Math.random() > 0.5 ? "done" : "err");
       }
 
       showInfo("welcome");
